@@ -383,7 +383,7 @@ public:
 
     void print(std::ostream& os) const override;
 
-    const std::string& getName()
+    const std::string& getName() const
     {
         return name;
     }
