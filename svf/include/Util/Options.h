@@ -267,6 +267,8 @@ public:
 
     // float precision for symbolic abstraction
     static const Option<u32_t> AEPrecision;
+    // argument type pruning
+    static const Option<bool> ArgTypePrune;
 };
 }  // namespace SVF
 

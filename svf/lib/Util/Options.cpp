@@ -832,4 +832,10 @@ const Option<u32_t> Options::AEPrecision(
     0
 );
 
+const Option<bool> Options::ArgTypePrune(
+    "arg-type-prune",
+    "prune based on argument type",
+    false 
+);
+
 } // namespace SVF.

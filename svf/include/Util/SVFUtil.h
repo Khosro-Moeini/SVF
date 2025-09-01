@@ -186,6 +186,8 @@ inline bool isNonInstricCallSite(const ICFGNode* inst)
     return isCallSite(inst);
 }
 
+bool matchType(const SVFType* lhs, const SVFType* rhs);
+
 /// Match arguments for callsite at caller and callee
 /// if the arg size does not match then we do not need to connect this parameter
 /// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)

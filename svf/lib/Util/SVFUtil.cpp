@@ -300,6 +300,20 @@ void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
     if (limitTimerSet) alarm(0);
 }
 
+bool SVFUtil::matchType(const SVFType *lhs, const SVFType *rhs)
+{
+    if (lhs->getKind() != rhs->getKind())
+        return false;
+    if (lhs->isStructTy() == true){
+        const SVFStructType *lhsStruct = dyn_cast<SVFStructType>(lhs);
+        const SVFStructType *rhsStruct = dyn_cast<SVFStructType>(rhs);
+        assert(rhsStruct && lhsStruct && "dynamic cast to struct failed");
+        if (lhsStruct->getName() != rhsStruct->getName())
+            return false;
+    }
+    return true;
+}
+
 /// Match arguments for callsite at caller and callee
 /// if the arg size does not match then we do not need to connect this parameter
 /// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
@@ -309,8 +323,19 @@ bool SVFUtil::matchArgs(const CallICFGNode* call, const FunObjVar* callee)
 {
     if (callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(call))
         return call->arg_size() >= callee->arg_size();
-    else
-        return call->arg_size() == callee->arg_size();
+    if (call->arg_size() != callee->arg_size())
+        return false;
+    if (Options::ArgTypePrune())
+    {
+        for (u32_t i = 0; i < call->arg_size(); i++)
+        {
+            const SVFType *callArgType = call->getArgument(i)->getType();
+            const SVFType *calleeArgType = callee->getArg(i)->getType();
+            if (matchType(callArgType, calleeArgType) == false)
+                return false;
+        }
+    }
+    return true;
 }
 
 bool SVFUtil::isCallSite(const ICFGNode* inst)
