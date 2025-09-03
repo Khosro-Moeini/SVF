@@ -413,6 +413,29 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
             }
         }
     }
+    if (target.empty() == true)
+    {
+        for (const auto& kv: pag->getFunArgsMap())
+        {
+            const FunObjVar* callee = kv.first; 
+            if(callee->hasAddressTaken() == false)
+                continue;
+            if(SVFUtil::matchArgs(cs, callee) == false)
+                continue;
+            
+            if(0 == getIndCallMap()[cs].count(callee))
+            {
+                newEdges[cs].insert(callee);
+                getIndCallMap()[cs].insert(callee);
+
+                callgraph->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
+                // FIXME: do we need to update llvm call graph here?
+                // The indirect call is maintained by ourself, We may update llvm's when we need to
+                //PTACallGraphNode* callgraphNode = callgraph->getOrInsertFunction(cs.getCaller());
+                //callgraphNode->addCalledFunction(cs,callgraph->getOrInsertFunction(callee));
+            }
+        }
+    }
 }
 
 /*

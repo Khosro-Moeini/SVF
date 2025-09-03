@@ -838,4 +838,10 @@ const Option<bool> Options::ArgTypePrune(
     false 
 );
 
+const Option<bool> Options::AddrTakenFallback(
+    "addr-taken-fallback",
+    "fallback to resolving to all address taken function",
+    false 
+);
+
 } // namespace SVF.

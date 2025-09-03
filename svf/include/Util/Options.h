@@ -269,6 +269,8 @@ public:
     static const Option<u32_t> AEPrecision;
     // argument type pruning
     static const Option<bool> ArgTypePrune;
+    // address taken fallback 
+    static const Option<bool> AddrTakenFallback;
 };
 }  // namespace SVF
 
