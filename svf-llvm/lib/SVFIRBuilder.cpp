@@ -1238,6 +1238,14 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
     else
     {
         //If the callee was not identified as a function (null F), this is indirect.
+        if (const GlobalAlias *alias = SVFUtil::dyn_cast<GlobalAlias>(cs->getCalledOperand()))
+        {
+            if (const Function *callee = SVFUtil::dyn_cast<Function>(alias->getAliaseeObject()))
+            {
+                handleDirectCall(cs, callee);
+                return;
+            }
+        }
         handleIndCall(cs);
     }
 }
