@@ -41,7 +41,7 @@ const OptionMap<NodeIDAllocator::Strategy> Options::NodeAllocStrat(
 const Option<u32_t> Options::MaxFieldLimit(
     "field-limit",
     "Maximum number of fields for field sensitive analysis",
-    512
+   	std::numeric_limits<u32_t>::max() 
 );
 
 const OptionMap<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
@@ -287,10 +287,10 @@ const Option<bool> Options::PAGPrint(
     false
 );
 
-const Option<u32_t> Options::IndirectCallLimit(
+const Option<u64_t> Options::IndirectCallLimit(
     "ind-call-limit",
     "Indirect solved call edge limit",
-    50000
+   	std::numeric_limits<u64_t>::max() 
 );
 
 Option<bool> Options::UsePreCompFieldSensitive(

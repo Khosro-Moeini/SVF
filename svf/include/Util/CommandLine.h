@@ -16,6 +16,7 @@
 #include <sstream>
 
 typedef unsigned u32_t;
+typedef unsigned long long u64_t;
 
 class OptionBase
 {
@@ -394,6 +395,25 @@ private:
 
         // Out of range according to strtoul, or according to us compared to u32_t.
         if (errno == ERANGE || sv > std::numeric_limits<u32_t>::max()) return false;
+        value = sv;
+        return true;
+    }
+
+    static bool fromString(const std::string s, u64_t &value)
+    {
+        // We won't allow anything except [0-9]+.
+        if (s.empty()) return false;
+        for (char c : s)
+        {
+            if (!(c >= '0' && c <= '9')) return false;
+        }
+
+        // Use strtoul because we're not using exceptions.
+        assert(sizeof(unsigned long long) >= sizeof(u64_t));
+        const unsigned long long sv = std::strtoul(s.c_str(), nullptr, 10);
+
+        // Out of range according to strtoul, or according to us compared to u32_t.
+        if (errno == ERANGE || sv > std::numeric_limits<u64_t>::max()) return false;
         value = sv;
         return true;
     }

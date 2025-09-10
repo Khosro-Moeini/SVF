@@ -122,7 +122,7 @@ public:
     static const Option<bool> ReadJson;
     static const Option<bool> CallGraphDotGraph;
     static const Option<bool> PAGPrint;
-    static const Option<u32_t> IndirectCallLimit;
+    static const Option<u64_t> IndirectCallLimit;
     static Option<bool> UsePreCompFieldSensitive;
     static const Option<bool> EnableAliasCheck;
     static const Option<bool> EnableTypeCheck;
