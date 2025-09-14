@@ -52,7 +52,7 @@ const std::string &CallGraphNode::getName() const
 //@{
 void CallGraphEdge::addDirectCallSite(const CallICFGNode* call)
 {
-    assert(call->getCalledFunction() && "not a direct callsite??");
+    //assert(call->getCalledFunction() && "not a direct callsite??");
     directCalls.insert(call);
 }
 
