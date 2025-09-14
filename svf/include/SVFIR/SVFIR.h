@@ -97,6 +97,7 @@ private:
     CommonCHGraph* chgraph; // class hierarchy graph
     CallSiteSet callSiteSet; /// all the callsites of a program
     CallGraph* callGraph; /// Callgraph with direct calls only; no change allowed after init and use callgraph in PointerAnalysis for indirect calls)
+    Set<const FunObjVar*> addressTakenSet;
 
     static std::unique_ptr<SVFIR> pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
     static std::string pagReadFromTxt;
@@ -350,6 +351,11 @@ public:
     inline bool funHasRet(const FunObjVar* func) const
     {
         return funRetMap.find(func) != funRetMap.end();
+    }
+
+    inline Set<const FunObjVar*> getAddressTakenSet() const
+    {
+        return addressTakenSet;
     }
     //@}
 

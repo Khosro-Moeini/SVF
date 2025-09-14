@@ -88,10 +88,15 @@ SVFIR* SVFIRBuilder::build()
     /// build callgraph
     CallGraphBuilder callGraphBuilder;
     std::vector<const FunObjVar*> funset;
+    Set<const FunObjVar*> ATSet;
     for (const auto& item: llvmModuleSet()->getFunctionSet())
     {
         funset.push_back(llvmModuleSet()->getFunObjVar(item));
+        if (llvmModuleSet()->getFunObjVar(item)->hasAddressTaken())
+            ATSet.insert(llvmModuleSet()->getFunObjVar(item));
     }
+    errs() << ATSet.size() << "\n";
+    pag->addressTakenSet = ATSet;
     pag->callGraph = callGraphBuilder.buildSVFIRCallGraph(funset);
 
     CHGraph* chg = new CHGraph();
@@ -1243,6 +1248,7 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
             if (const Function *callee = SVFUtil::dyn_cast<Function>(alias->getAliaseeObject()))
             {
                 handleDirectCall(cs, callee);
+                pag->callGraph->addDirectCallGraphEdge(callBlockNode, callBlockNode->getCaller(), pag->getFunObjVar(callee->getName().str()));
                 return;
             }
         }
