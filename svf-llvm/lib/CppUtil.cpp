@@ -351,6 +351,8 @@ bool cppUtil::isValVtbl(const Value* val)
  */
 bool cppUtil::isVirtualCallSite(const CallBase* cs)
 {
+	if (Options::NoVCall() == true)
+		return false;
     // the callsite must be an indirect one with at least one argument (this
     // ptr)
     if (cs->getCalledFunction() != nullptr || cs->arg_empty())

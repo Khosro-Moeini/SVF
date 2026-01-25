@@ -271,6 +271,8 @@ public:
     static const Option<bool> ArgTypePrune;
     // address taken fallback 
     static const Option<bool> AddrTakenFallback;
+   	// no vcall in C code 
+	static const Option<bool> NoVCall;
 };
 }  // namespace SVF
 

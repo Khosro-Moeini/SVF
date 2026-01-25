@@ -844,4 +844,10 @@ const Option<bool> Options::AddrTakenFallback(
     false 
 );
 
+const Option<bool> Options::NoVCall(
+    "no-vcall",
+    "do not look for vcall patterns",
+    false 
+);
+
 } // namespace SVF.
