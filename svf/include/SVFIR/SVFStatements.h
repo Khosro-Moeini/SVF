@@ -38,6 +38,8 @@ namespace SVF
 {
 
 class SVFVar;
+class ValVar;
+class ObjVar;
 class ICFGNode;
 class IntraICFGNode;
 class CallICFGNode;
@@ -51,8 +53,7 @@ class SVFBasicBlock;
 typedef GenericEdge<SVFVar> GenericPAGEdgeTy;
 class SVFStmt : public GenericPAGEdgeTy
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 public:
     /// Types of SVFIR statements
@@ -91,8 +92,54 @@ protected:
     {
     }
 
+    SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, EdgeID eid, SVFVar* value, ICFGNode* icfgNode, bool real = true);
+
+    /**
+     * Set the SVF BasicBlock for the new statements, this is used when loading statements from DB
+     */
+    inline void setBasicBlock(const SVFBasicBlock* bb)
+    {
+        basicBlock = bb;
+    }
+
+    /**
+     * set the call edge lanbel counter for the new statements, this is used when loading statements from DB
+     */
+    inline void setCallEdgeLabelCounter(u64_t counter)
+    {
+        callEdgeLabelCounter = counter;
+    }
+
+    /**
+     * set the store edge lanbel counter for the new statements, this is used when loading statements from DB
+     */
+    inline void setStoreEdgeLabelCounter(u64_t counter)
+    {
+        storeEdgeLabelCounter = counter;
+    }
+
+    /**
+     * set the multi operand edge lanbel counter for the new statements, this is used when loading statements from DB
+     */
+    inline void setMultiOpndLabelCounter(u64_t counter)
+    {
+        multiOpndLabelCounter = counter;
+    }
+
+    /**
+     * Add a call site Instruction to label mapping, this is used when loading statements from DB
+     */
+    static inline void addInst2Labeled(const ICFGNode* cs, u32_t label)
+    {
+        inst2LabelMap.emplace(cs, label);
+    }
+
+    static inline void addVar2Labeled(const SVFVar* var, u32_t label)
+    {
+        var2LabelMap.emplace(var, label);
+    }
+
 public:
-    static u32_t totalEdgeNum; ///< Total edge number
 
     /// Constructor
     SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, bool real = true);
@@ -131,7 +178,7 @@ public:
         return edgeId;
     }
     /// Whether src and dst nodes are both of pointer type
-    bool isPTAEdge() const;
+    virtual bool isPTAEdge() const;
 
     /// Get/set methods for llvm instruction
     //@{
@@ -224,6 +271,33 @@ private:
     static u64_t callEdgeLabelCounter;  ///< Call site Instruction counter
     static u64_t storeEdgeLabelCounter;  ///< Store Instruction counter
     static u64_t multiOpndLabelCounter;  ///< MultiOpndStmt counter
+
+public:
+    static inline const Inst2LabelMap* getInst2LabelMap()
+    {
+        return &inst2LabelMap;
+    }
+
+    static inline const Var2LabelMap* getVar2LabelMap()
+    {
+        return &var2LabelMap;
+    }
+
+    static inline const u64_t* getCallEdgeLabelCounter()
+    {
+        return &callEdgeLabelCounter;
+    }
+
+    static inline const u64_t* getStoreEdgeLabelCounter()
+    {
+        return &storeEdgeLabelCounter;
+    }
+
+    static inline const u64_t* getMultiOpndLabelCounter()
+    {
+        return &multiOpndLabelCounter;
+    }
+
 };
 
 /*
@@ -233,8 +307,7 @@ private:
 */
 class AssignStmt : public SVFStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 private:
     AssignStmt();                      ///< place holder
@@ -248,8 +321,6 @@ private:
 protected:
     /// constructor
     AssignStmt(SVFVar* s, SVFVar* d, GEdgeFlag k) : SVFStmt(s, d, k) {}
-    /// Constructor to create empty AssignStmt (for SVFIRReader/serialization)
-    AssignStmt(GEdgeFlag k) : SVFStmt(k) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -264,10 +335,8 @@ public:
                edge->getEdgeKind() == SVFStmt::Copy ||
                edge->getEdgeKind() == SVFStmt::Store ||
                edge->getEdgeKind() == SVFStmt::Load ||
-               edge->getEdgeKind() == SVFStmt::Call ||
                edge->getEdgeKind() == SVFStmt::Ret ||
                edge->getEdgeKind() == SVFStmt::Gep ||
-               edge->getEdgeKind() == SVFStmt::ThreadFork ||
                edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
     static inline bool classof(const GenericPAGEdgeTy* edge)
@@ -276,10 +345,8 @@ public:
                edge->getEdgeKind() == SVFStmt::Copy ||
                edge->getEdgeKind() == SVFStmt::Store ||
                edge->getEdgeKind() == SVFStmt::Load ||
-               edge->getEdgeKind() == SVFStmt::Call ||
                edge->getEdgeKind() == SVFStmt::Ret ||
                edge->getEdgeKind() == SVFStmt::Gep ||
-               edge->getEdgeKind() == SVFStmt::ThreadFork ||
                edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
     //@}
@@ -309,12 +376,9 @@ public:
  */
 class AddrStmt: public AssignStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 private:
-    /// Constructs empty AddrStmt (for SVFIRReader/serialization)
-    AddrStmt() : AssignStmt(SVFStmt::Addr) {}
     AddrStmt(const AddrStmt&);       ///< place holder
     void operator=(const AddrStmt&); ///< place holder
 
@@ -353,6 +417,15 @@ public:
         return arrSize;
     }
 
+    virtual bool isPTAEdge() const override
+    {
+        return true;
+    }
+
+    const ValVar* getLHSVar() const;
+    const ObjVar* getRHSVar() const;
+    const ValVar* getDstNode() const;
+    const ObjVar* getSrcNode() const;
 };
 
 /*!
@@ -360,11 +433,10 @@ public:
  */
 class CopyStmt: public AssignStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+
+    friend class GraphDBClient;
+
 private:
-    /// Constructs empty CopyStmt (for SVFIRReader/serialization)
-    CopyStmt() : AssignStmt(SVFStmt::Copy) {}
     CopyStmt(const CopyStmt&);       ///< place holder
     void operator=(const CopyStmt&); ///< place holder
 public:
@@ -438,7 +510,13 @@ public:
     /// constructor
     CopyStmt(SVFVar* s, SVFVar* d, CopyKind k) : AssignStmt(s, d, SVFStmt::Copy), copyKind(k) {}
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const override;
+
 private:
     u32_t copyKind;
 };
@@ -448,12 +526,9 @@ private:
  */
 class StoreStmt: public AssignStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 private:
-    /// Constructs empty StoreStmt (for SVFIRReader/serialization)
-    StoreStmt() : AssignStmt(SVFStmt::Store) {}
     StoreStmt(const StoreStmt&);      ///< place holder
     void operator=(const StoreStmt&); ///< place holder
 
@@ -477,7 +552,13 @@ public:
     /// constructor
     StoreStmt(SVFVar* s, SVFVar* d, const ICFGNode* st);
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -485,12 +566,9 @@ public:
  */
 class LoadStmt: public AssignStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 private:
-    /// Constructs empty LoadStmt (for SVFIRReader/serialization)
-    LoadStmt(): AssignStmt(SVFStmt::Load) {}
     LoadStmt(const LoadStmt&);       ///< place holder
     void operator=(const LoadStmt&); ///< place holder
 
@@ -514,6 +592,11 @@ public:
     /// constructor
     LoadStmt(SVFVar* s, SVFVar* d) : AssignStmt(s, d, SVFStmt::Load) {}
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const override;
 };
 
@@ -522,12 +605,10 @@ public:
  */
 class GepStmt: public AssignStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
+
 
 private:
-    /// Constructs empty GepStmt (for SVFIRReader/serialization)
-    GepStmt() : AssignStmt(SVFStmt::Gep) {}
     GepStmt(const GepStmt &);  ///< place holder
     void operator=(const GepStmt &); ///< place holder
 
@@ -597,78 +678,23 @@ public:
     {
     }
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const;
 
+
 };
 
-
-/*!
- * Call
- */
-class CallPE: public AssignStmt
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
-private:
-    CallPE(const CallPE&);         ///< place holder
-    void operator=(const CallPE&); ///< place holder
-
-    const CallICFGNode* call;      /// the callsite statement calling from
-    const FunEntryICFGNode* entry; /// the function exit statement calling to
-protected:
-    /// Constructs empty CallPE (for SVFIRReader/serialization)
-    CallPE(GEdgeFlag k = SVFStmt::Call) : AssignStmt(k), call{}, entry{} {}
-
-public:
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const CallPE*)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFStmt* edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Call ||
-               edge->getEdgeKind() == SVFStmt::ThreadFork;
-    }
-    static inline bool classof(const GenericPAGEdgeTy* edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Call ||
-               edge->getEdgeKind() == SVFStmt::ThreadFork;
-    }
-    //@}
-
-    /// constructor
-    CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
-           const FunEntryICFGNode* e, GEdgeKind k = SVFStmt::Call);
-
-    /// Get method for the call instruction
-    //@{
-    inline const CallICFGNode* getCallInst() const
-    {
-        return call;
-    }
-    inline const CallICFGNode* getCallSite() const
-    {
-        return call;
-    }
-    inline const FunEntryICFGNode* getFunEntryICFGNode() const
-    {
-        return entry;
-    }
-    //@}
-
-    virtual const std::string toString() const override;
-};
 
 /*!
  * Return
  */
 class RetPE: public AssignStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 private:
     RetPE(const RetPE&);          ///< place holder
@@ -676,10 +702,6 @@ private:
 
     const CallICFGNode* call;    /// the callsite statement returning to
     const FunExitICFGNode* exit; /// the function exit statement returned from
-
-protected:
-    /// Constructs empty RetPE (for SVFIRReader/serialization)
-    RetPE(GEdgeFlag k = SVFStmt::Ret) : AssignStmt(k), call{}, exit{} {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -720,7 +742,13 @@ public:
     }
     //@}
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const override;
+
 };
 
 /*
@@ -728,11 +756,10 @@ public:
 */
 class MultiOpndStmt : public SVFStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 public:
-    typedef std::vector<SVFVar*> OPVars;
+    typedef std::vector<ValVar*> OPVars;
 
 private:
     MultiOpndStmt();                      ///< place holder
@@ -746,9 +773,7 @@ private:
 protected:
     OPVars opVars;
     /// Constructor, only used by subclasses but not external users
-    MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k);
-    /// Constructs empty MultiOpndStmt (for SVFIRReader/serialization)
-    MultiOpndStmt(GEdgeFlag k) : SVFStmt(k) {}
+    MultiOpndStmt(ValVar* r, const OPVars& opnds, GEdgeFlag k);
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -760,27 +785,26 @@ public:
     static inline bool classof(const SVFStmt* node)
     {
         return node->getEdgeKind() == Phi || node->getEdgeKind() == Select ||
-               node->getEdgeKind() == BinaryOp || node->getEdgeKind() == Cmp;
+               node->getEdgeKind() == BinaryOp || node->getEdgeKind() == Cmp ||
+               node->getEdgeKind() == Call || node->getEdgeKind() == ThreadFork;
     }
     static inline bool classof(const GenericPAGEdgeTy* node)
     {
         return node->getEdgeKind() == Phi || node->getEdgeKind() == Select ||
-               node->getEdgeKind() == BinaryOp || node->getEdgeKind() == Cmp;
+               node->getEdgeKind() == BinaryOp || node->getEdgeKind() == Cmp ||
+               node->getEdgeKind() == Call || node->getEdgeKind() == ThreadFork;
     }
     //@}
     /// Operands and result at a BinaryNode e.g., p = q + r, `p` is resVar and
     /// `r` is OpVar
     //@{
     /// Operand SVFVars
-    inline const SVFVar* getOpVar(u32_t pos) const
+    inline const ValVar* getOpVar(u32_t pos) const
     {
         return opVars.at(pos);
     }
     /// Result SVFVar
-    inline const SVFVar* getRes() const
-    {
-        return SVFStmt::getDstNode();
-    }
+    const ValVar* getRes() const;
 
     NodeID getOpVarID(u32_t pos) const;
     NodeID getResID() const;
@@ -805,20 +829,91 @@ public:
 };
 
 /*!
+ * Call
+ * CallPE is a phi-like statement at function entry that merges actual parameters
+ * from all call sites into the formal parameter.
+ * e.g., formal_param = CallPE(actual1@callsite1, actual2@callsite2, ...)
+ */
+class CallPE: public MultiOpndStmt
+{
+    friend class GraphDBClient;
+
+public:
+    typedef std::vector<const CallICFGNode*> CallICFGNodeVec;
+
+private:
+    CallPE(const CallPE&);         ///< place holder
+    void operator=(const CallPE&); ///< place holder
+
+    CallICFGNodeVec opCallICFGNodes; /// each operand's call site
+    const FunEntryICFGNode* entry;   /// the function entry node
+
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CallPE*)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt* edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Call ||
+               edge->getEdgeKind() == SVFStmt::ThreadFork;
+    }
+    static inline bool classof(const GenericPAGEdgeTy* edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Call ||
+               edge->getEdgeKind() == SVFStmt::ThreadFork;
+    }
+    //@}
+
+    /// constructor
+    CallPE(ValVar* res, const OPVars& opnds,
+           const CallICFGNodeVec& icfgNodes,
+           const FunEntryICFGNode* e,
+           GEdgeKind k = SVFStmt::Call);
+
+    /// Add an operand (actual param) from a call site
+    void addOpVar(ValVar* op, const CallICFGNode* call)
+    {
+        opVars.push_back(op);
+        opCallICFGNodes.push_back(call);
+        assert(opVars.size() == opCallICFGNodes.size() &&
+               "Numbers of operands and their CallICFGNodes are not consistent?");
+    }
+
+    /// Return the CallICFGNode of the i-th operand
+    inline const CallICFGNode* getOpCallICFGNode(u32_t op_idx) const
+    {
+        return opCallICFGNodes.at(op_idx);
+    }
+
+    /// Return all call site ICFGNodes
+    inline const CallICFGNodeVec& getOpCallICFGNodes() const
+    {
+        return opCallICFGNodes;
+    }
+
+    /// Return the function entry node
+    inline const FunEntryICFGNode* getFunEntryICFGNode() const
+    {
+        return entry;
+    }
+
+    virtual const std::string toString() const override;
+};
+
+/*!
  * Phi statement (e.g., p = phi(q,r) which receives values from variables q and r from different paths)
  * it is typically at a joint point of the control-flow graph
  */
 class PhiStmt: public MultiOpndStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
+    friend class GraphDBClient;
 public:
     typedef std::vector<const ICFGNode*> OpICFGNodeVec;
 
 private:
-    /// Constructs empty PhiStmt (for SVFIRReader/serialization)
-    PhiStmt() : MultiOpndStmt(SVFStmt::Phi) {}
     PhiStmt(const PhiStmt&);        ///< place holder
     void operator=(const PhiStmt&); ///< place holder
 
@@ -846,18 +941,30 @@ public:
     //@}
 
     /// constructor
-    PhiStmt(SVFVar* s, const OPVars& opnds, const OpICFGNodeVec& icfgNodes)
-        : MultiOpndStmt(s, opnds, SVFStmt::Phi), opICFGNodes(icfgNodes)
+    PhiStmt(ValVar* res, const OPVars& opnds, const OpICFGNodeVec& icfgNodes)
+        : MultiOpndStmt(res, opnds, SVFStmt::Phi), opICFGNodes(icfgNodes)
     {
         assert(opnds.size() == icfgNodes.size() &&
                "Numbers of operands and their ICFGNodes are not consistent?");
     }
-    void addOpVar(SVFVar* op, const ICFGNode* inode)
+    void addOpVar(ValVar* op, const ICFGNode* inode)
     {
         opVars.push_back(op);
         opICFGNodes.push_back(inode);
         assert(opVars.size() == opICFGNodes.size() &&
                "Numbers of operands and their ICFGNodes are not consistent?");
+    }
+
+    void setOpICFGNodeVec(OpICFGNodeVec& icfgNodes)
+    {
+        assert(opVars.size() == icfgNodes.size() &&
+               "Numbers of operands and their ICFGNodes are not consistent?");
+        opICFGNodes = icfgNodes;
+    }
+
+    inline const OpICFGNodeVec* getOpICFGNodeVec() const
+    {
+        return &opICFGNodes;
     }
 
     /// Return the corresponding ICFGNode of this operand
@@ -871,6 +978,7 @@ public:
     bool isFunctionRetPhi() const;
 
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -878,12 +986,8 @@ public:
  */
 class SelectStmt: public MultiOpndStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
+    friend class GraphDBClient;
 private:
-    /// Constructs empty SelectStmt (for SVFIRReader/serialization)
-    SelectStmt() : MultiOpndStmt(SVFStmt::Select), condition{} {}
     SelectStmt(const SelectStmt&);     ///< place holder
     void operator=(const SelectStmt&); ///< place holder
 
@@ -911,21 +1015,22 @@ public:
     //@}
 
     /// constructor
-    SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond);
+    SelectStmt(ValVar* res, const OPVars& opnds, const SVFVar* cond);
     virtual const std::string toString() const override;
 
     inline const SVFVar* getCondition() const
     {
         return condition;
     }
-    inline const SVFVar* getTrueValue() const
+    inline const ValVar* getTrueValue() const
     {
         return getOpVar(0);
     }
-    inline const SVFVar* getFalseValue() const
+    inline const ValVar* getFalseValue() const
     {
         return getOpVar(1);
     }
+
 };
 
 /*!
@@ -933,12 +1038,8 @@ public:
  */
 class CmpStmt: public MultiOpndStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
+    friend class GraphDBClient;
 private:
-    /// Constructs empty CmpStmt (for SVFIRReader/serialization)
-    CmpStmt() : MultiOpndStmt(SVFStmt::Cmp) {}
     CmpStmt(const CmpStmt&);        ///< place holder
     void operator=(const CmpStmt&); ///< place holder
 
@@ -1004,7 +1105,7 @@ public:
     //@}
 
     /// constructor
-    CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre);
+    CmpStmt(ValVar* res, const OPVars& opnds, u32_t pre);
 
     u32_t getPredicate() const
     {
@@ -1012,6 +1113,7 @@ public:
     }
 
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -1019,12 +1121,8 @@ public:
  */
 class BinaryOPStmt: public MultiOpndStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
+    friend class GraphDBClient;
 private:
-    /// Constructs empty BinaryOPStmt (for SVFIRReader/serialization)
-    BinaryOPStmt() : MultiOpndStmt(SVFStmt::BinaryOp) {}
     BinaryOPStmt(const BinaryOPStmt&);   ///< place holder
     void operator=(const BinaryOPStmt&); ///< place holder
     u32_t opcode;
@@ -1074,7 +1172,7 @@ public:
     //@}
 
     /// constructor
-    BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc);
+    BinaryOPStmt(ValVar* res, const OPVars& opnds, u32_t oc);
 
     u32_t getOpcode() const
     {
@@ -1082,6 +1180,7 @@ public:
     }
 
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -1089,12 +1188,9 @@ public:
  */
 class UnaryOPStmt: public SVFStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 private:
-    /// Constructs empty UnaryOPStmt (for SVFIRReader/serialization)
-    UnaryOPStmt() : SVFStmt(SVFStmt::UnaryOp) {}
     UnaryOPStmt(const UnaryOPStmt&);    ///< place holder
     void operator=(const UnaryOPStmt&); ///< place holder
     SVFVar* getSrcNode(); ///< place holder, use getOpVar() instead
@@ -1128,27 +1224,19 @@ public:
     //@}
 
     /// constructor
-    UnaryOPStmt(SVFVar* s, SVFVar* d, u32_t oc)
-        : SVFStmt(s, d, SVFStmt::UnaryOp), opcode(oc)
-    {
-    }
+    UnaryOPStmt(ValVar* s, ValVar* d, u32_t oc);
 
     u32_t getOpcode() const
     {
         return opcode;
     }
-    inline const SVFVar* getOpVar() const
-    {
-        return SVFStmt::getSrcNode();
-    }
-    inline const SVFVar* getRes() const
-    {
-        return SVFStmt::getDstNode();
-    }
+    const ValVar* getOpVar() const;
+    const ValVar* getRes() const;
     NodeID getOpVarID() const;
     NodeID getResID() const;
 
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -1156,15 +1244,12 @@ public:
  */
 class BranchStmt: public SVFStmt
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 public:
     typedef std::vector<std::pair<const ICFGNode*, s32_t>> SuccAndCondPairVec;
 
 private:
-    /// Constructs empty BranchStmt (for SVFIRReader/serialization)
-    BranchStmt() : SVFStmt(SVFStmt::Branch), cond{}, brInst{} {}
     BranchStmt(const BranchStmt&);     ///< place holder
     void operator=(const BranchStmt&); ///< place holder
     SVFVar* getSrcNode();              ///< place holder, not allowed
@@ -1173,8 +1258,8 @@ private:
     NodeID getDstID(); ///< place holder, use getResID() instead
 
     SuccAndCondPairVec successors;
-    const SVFVar* cond;
-    const SVFVar* brInst;
+    const ValVar* cond;
+    const ValVar* brInst;
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -1194,19 +1279,15 @@ public:
     //@}
 
     /// constructor
-    BranchStmt(SVFVar* inst, SVFVar* c, const SuccAndCondPairVec& succs)
-        : SVFStmt(c, inst, SVFStmt::Branch), successors(succs), cond(c),
-          brInst(inst)
-    {
-    }
+    BranchStmt(ValVar* inst, ValVar* c, const SuccAndCondPairVec& succs);
 
     /// The branch is unconditional if cond is a null value
     bool isUnconditional() const;
     /// The branch is conditional if cond is not a null value
     bool isConditional() const;
     /// Return the condition
-    const SVFVar* getCondition() const;
-    const SVFVar* getBranchInst() const
+    const ValVar* getCondition() const;
+    const ValVar* getBranchInst() const
     {
         return brInst;
     }
@@ -1239,6 +1320,7 @@ public:
     }
     //@}
     virtual const std::string toString() const override;
+
 };
 
 /*!
@@ -1246,12 +1328,9 @@ public:
  */
 class TDForkPE: public CallPE
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 private:
-    /// Constructs empty TDForkPE (for SVFIRReader/serialization)
-    TDForkPE() : CallPE(SVFStmt::ThreadFork) {}
     TDForkPE(const TDForkPE&);       ///< place holder
     void operator=(const TDForkPE&); ///< place holder
 
@@ -1273,13 +1352,15 @@ public:
     //@}
 
     /// constructor
-    TDForkPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
-             const FunEntryICFGNode* entry)
-        : CallPE(s, d, i, entry, SVFStmt::ThreadFork)
+    TDForkPE(ValVar* res, const OPVars& opnds,
+             const CallICFGNodeVec& icfgNodes,
+             const FunEntryICFGNode* e)
+        : CallPE(res, opnds, icfgNodes, e, SVFStmt::ThreadFork)
     {
     }
 
     virtual const std::string toString() const;
+
 };
 
 /*!
@@ -1287,12 +1368,9 @@ public:
  */
 class TDJoinPE: public RetPE
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 private:
-    /// Constructs empty TDJoinPE (for SVFIRReader/serialization)
-    TDJoinPE() : RetPE(SVFStmt::ThreadJoin) {}
     TDJoinPE(const TDJoinPE&);       ///< place holder
     void operator=(const TDJoinPE&); ///< place holder
 
@@ -1320,7 +1398,13 @@ public:
     {
     }
 
+    const ValVar* getRHSVar() const;
+    const ValVar* getLHSVar() const;
+    const ValVar* getSrcNode() const;
+    const ValVar* getDstNode() const;
+
     virtual const std::string toString() const;
+
 };
 
 } // End namespace SVF

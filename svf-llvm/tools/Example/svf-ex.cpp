@@ -102,7 +102,7 @@ void dummyVisit(const VFGNode* node)
 /*!
  * An example to query/collect all the uses of a definition of a value along value-flow graph (VFG)
  */
-void traverseOnVFG(const SVFG* vfg, const SVFVar* svfval)
+void traverseOnVFG(const SVFG* vfg, const ValVar* svfval)
 {
     if (!vfg->hasDefSVFGNode(svfval))
         return;
@@ -147,11 +147,7 @@ int main(int argc, char ** argv)
                         argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>"
                     );
 
-    if (Options::WriteAnder() == "ir_annotator")
-    {
-        LLVMModuleSet::preProcessBCs(moduleNameVec);
-    }
-
+    LLVMModuleSet::preProcessBCs(moduleNameVec);
     LLVMModuleSet::buildSVFModule(moduleNameVec);
 
     /// Build Program Assignment Graph (SVFIR)
@@ -183,7 +179,10 @@ int main(int argc, char ** argv)
             const SVFGNode* node = it.second;
             if (node->getValue())
             {
-                traverseOnVFG(svfg, node->getValue());
+                if (const ValVar* valVar = SVFUtil::dyn_cast<ValVar>(node->getValue()))
+                {
+                    traverseOnVFG(svfg, valVar);
+                }
                 /// Print points-to information
                 printPts(ander, node->getValue());
                 for (const SVFGEdge* edge : node->getOutEdges())

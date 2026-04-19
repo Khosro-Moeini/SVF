@@ -50,10 +50,9 @@ class ObjTypeInfo;
  */
 class IRGraph : public GenericGraph<SVFVar, SVFStmt>
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
     friend class SVFIRBuilder;
     friend class SymbolTableBuilder;
+    friend class GraphDBClient;
 
 public:
 
@@ -131,6 +130,7 @@ protected:
     /// blocks, thus flags are needed to distinguish them
     SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind,
                             const ICFGNode* cs);
+    SVFStmt* hasEdge(SVFStmt* edge, SVFStmt::PEDGEK kind);
     /// Return MultiOpndStmt since it has more than one operands (we use operand
     /// 2 here to make the flag)
     SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind,
@@ -272,6 +272,15 @@ public:
         return svfTypes;
     }
 
+    inline const SVFType* getSVFType(u32_t id) const
+    {
+        for(const SVFType* type : svfTypes)
+        {
+            if(type->getId() == id)
+                return type;
+        }
+        return nullptr;
+    }
     inline const Set<const StInfo*>& getStInfos() const
     {
         return stInfos;
@@ -319,11 +328,11 @@ public:
         nodeNumAfterPAGBuild = num;
     }
 
-    inline u32_t getPAGNodeNum() const
+    inline u32_t getSVFVarNum() const
     {
         return nodeNum;
     }
-    inline u32_t getPAGEdgeNum() const
+    inline u32_t getSVFStmtNum() const
     {
         return edgeNum;
     }
@@ -362,6 +371,7 @@ public:
 
     inline void addStInfo(StInfo* stInfo)
     {
+        stInfo->setStinfoId(stInfos.size());
         stInfos.insert(stInfo);
     }
 

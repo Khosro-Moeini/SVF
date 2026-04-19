@@ -53,8 +53,6 @@ typedef GenericNode<ICFGNode, ICFGEdge> GenericICFGNodeTy;
 
 class ICFGNode : public GenericICFGNodeTy
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
 
@@ -142,8 +140,6 @@ public:
         return isICFGNodeKinds(node->getNodeKind());
     }
 
-
-
 protected:
     const FunObjVar* fun;
     const SVFBasicBlock* bb;
@@ -194,13 +190,10 @@ public:
  */
 class IntraICFGNode : public ICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
+
 private:
     bool isRet;
-
-    /// Constructor to create empty IntraICFGNode (for SVFIRReader/deserialization)
-    IntraICFGNode(NodeID id) : ICFGNode(id, IntraBlock), isRet(false) {}
 
 public:
     IntraICFGNode(NodeID id, const SVFBasicBlock* b, bool isReturn) : ICFGNode(id, IntraBlock), isRet(isReturn)
@@ -277,16 +270,12 @@ public:
  */
 class FunEntryICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 public:
     typedef std::vector<const SVFVar *> FormalParmNodeVec;
 private:
     FormalParmNodeVec FPNodes;
-
-    /// Constructor to create empty FunEntryICFGNode (for SVFIRReader/deserialization)
-    FunEntryICFGNode(NodeID id) : InterICFGNode(id, FunEntryBlock) {}
 
 public:
     FunEntryICFGNode(NodeID id, const FunObjVar* f);
@@ -347,17 +336,18 @@ public:
  */
 class FunExitICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 private:
     const SVFVar *formalRet;
 
-    /// Constructor to create empty FunExitICFGNode (for SVFIRReader/deserialization)
-    FunExitICFGNode(NodeID id) : InterICFGNode(id, FunExitBlock), formalRet{} {}
-
 public:
-    FunExitICFGNode(NodeID id, const FunObjVar* f);
+    FunExitICFGNode(NodeID id, const FunObjVar* f, const SVFBasicBlock* b)
+        : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
+    {
+        this->fun = f;
+        this->bb = b;
+    }
 
     /// Return function
     inline const FunObjVar* getFun() const override
@@ -415,8 +405,7 @@ public:
  */
 class CallICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
 
 public:
     typedef std::vector<const ValVar *> ActualParmNodeVec;
@@ -430,9 +419,8 @@ protected:
     SVFVar* vtabPtr;                /// virtual table pointer
     s32_t virtualFunIdx;            /// virtual function index of the virtual table(s) at a virtual call
     std::string funNameOfVcall;     /// the function name of this virtual call
+    const SVFVar* indFunPtr;
 
-    /// Constructor to create empty CallICFGNode (for SVFIRReader/deserialization)
-    CallICFGNode(NodeID id) : InterICFGNode(id, FunCallBlock), ret{} {}
 
 public:
     CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,
@@ -583,6 +571,18 @@ public:
     {
         return "CallICFGNode: " + ICFGNode::getSourceLoc();
     }
+
+    inline void setIndFunPtr(const SVFVar* indFun)
+    {
+        assert(isIndirectCall() && "not a indirect call?");
+        indFunPtr = indFun;
+    }
+
+    inline const SVFVar* getIndFunPtr() const
+    {
+        assert(isIndirectCall() && "not a indirect call?");
+        return indFunPtr;
+    }
 };
 
 
@@ -591,26 +591,29 @@ public:
  */
 class RetICFGNode : public InterICFGNode
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
+    friend class GraphDBClient;
+
+protected:
+    /// Add call block node from database for the new RetICFGNode [only used this function when loading from db results]
+    inline void setCallBlockNode(const CallICFGNode* cb)
+    {
+        callBlockNode = cb;
+    }
 
 private:
     const SVFVar *actualRet;
     const CallICFGNode* callBlockNode;
 
-    /// Constructor to create empty RetICFGNode (for SVFIRReader/deserialization)
-    RetICFGNode(NodeID id)
-        : InterICFGNode(id, FunRetBlock), actualRet{}, callBlockNode{}
-    {
-    }
-
 public:
     RetICFGNode(NodeID id, CallICFGNode* cb) :
         InterICFGNode(id, FunRetBlock), actualRet(nullptr), callBlockNode(cb)
     {
-        fun = cb->getFun();
-        bb = cb->getBB();
-        type = cb->getType();
+        if (nullptr != cb)
+        {
+            fun = cb->getFun();
+            bb = cb->getBB();
+            type = cb->getType();
+        }
     }
 
     inline const CallICFGNode* getCallICFGNode() const

@@ -268,12 +268,7 @@ bool IRGraph::addEdge(SVFVar* src, SVFVar* dst, SVFStmt* edge)
 SVFStmt* IRGraph::hasNonlabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind)
 {
     SVFStmt edge(src,dst,kind, false);
-    SVFStmt::SVFStmtSetTy::iterator it = KindToSVFStmtSetMap[kind].find(&edge);
-    if (it != KindToSVFStmtSetMap[kind].end())
-    {
-        return *it;
-    }
-    return nullptr;
+    return hasEdge(&edge, kind);
 }
 
 /*!
@@ -303,6 +298,17 @@ SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind,
     }
     return nullptr;
 }
+
+SVFStmt* IRGraph::hasEdge(SVFStmt* edge, SVFStmt::PEDGEK kind)
+{
+    SVFStmt::SVFStmtSetTy::iterator it = KindToSVFStmtSetMap[kind].find(edge);
+    if (it != KindToSVFStmtSetMap[kind].end())
+    {
+        return *it;
+    }
+    return nullptr;
+}
+
 
 /*!
  * Dump this IRGraph
@@ -508,7 +514,7 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         assert(edge && "No edge found!!");
         if(const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge))
         {
-            return calledge->getCallSite()->getSourceLoc();
+            return calledge->getFunEntryICFGNode()->getSourceLoc();
         }
         else if(const RetPE* retedge = SVFUtil::dyn_cast<RetPE>(edge))
         {

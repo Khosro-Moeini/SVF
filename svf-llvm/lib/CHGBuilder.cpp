@@ -173,11 +173,14 @@ void CHGBuilder::connectInheritEdgeViaCall(const Function* caller, const CallBas
     {
         if (cs->arg_size() < 1 || (cs->arg_size() < 2 && cs->paramHasAttr(0, llvm::Attribute::StructRet)))
             return;
+        if(caller->arg_size() == 0)
+        {
+            return;
+        }
         const Value* csThisPtr = cppUtil::getVCallThisPtr(cs);
-        //const Argument* consThisPtr = getConstructorThisPtr(caller);
-        //bool samePtr = isSameThisPtrInConstructor(consThisPtr, csThisPtr);
-        bool samePtrTrue = true;
-        if (csThisPtr != nullptr && samePtrTrue)
+        const Argument* consThisPtr = getConstructorThisPtr(caller);
+        bool samePtr = isSameThisPtrInConstructor(consThisPtr, csThisPtr);
+        if (csThisPtr != nullptr && samePtr)
         {
             struct DemangledName basename = demangle(callee->getName().str());
             if (!LLVMUtil::isCallSite(csThisPtr)  &&
@@ -739,12 +742,10 @@ void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const Function *lf)
 {
     if (cppUtil::isCPPThunkFunction(lf))
     {
-        if (const auto* tf = cppUtil::getThunkTarget(lf))
-        {
-            const FunObjVar* pFunction =
-                llvmModuleSet()->getFunObjVar(tf);
-            v.push_back(pFunction);
-        }
+        const auto* tf = cppUtil::getThunkTarget(lf);
+        const FunObjVar* pFunction =
+            llvmModuleSet()->getFunObjVar(tf ? tf : lf);
+        v.push_back(pFunction);
     }
     else
     {

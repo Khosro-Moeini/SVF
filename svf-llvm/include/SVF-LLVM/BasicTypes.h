@@ -42,6 +42,8 @@
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Statepoint.h>
 #include <llvm/IR/Intrinsics.h>
+#include <llvm/IR/InlineAsm.h>
+#include <llvm/IR/Constants.h>
 
 #include <llvm/Analysis/MemoryLocation.h>
 #include <llvm/Analysis/DominanceFrontier.h>
@@ -72,8 +74,10 @@ typedef llvm::GlobalObject GlobalObject;
 typedef llvm::Use Use;
 typedef llvm::ModulePass ModulePass;
 typedef llvm::IRBuilder<> IRBuilder;
-#if LLVM_VERSION_MAJOR >= 12
+#if LLVM_VERSION_MAJOR >= 12 && LLVM_VERSION_MAJOR <= 16
 typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
+#elif LLVM_VERSION_MAJOR > 16
+typedef llvm::UnifyFunctionExitNodesPass UnifyFunctionExitNodes;
 #else
 typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
 #endif
@@ -125,6 +129,9 @@ typedef llvm::Constant Constant;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantFP ConstantFP;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
+typedef llvm::InlineAsm InlineAsm;
+typedef llvm::DSOLocalEquivalent DSOLocalEquivalent;
+typedef llvm::NoCFIValue NoCFIValue;
 typedef llvm::GlobalAlias GlobalAlias;
 typedef llvm::GlobalIFunc GlobalIFunc;
 typedef llvm::GlobalVariable GlobalVariable;

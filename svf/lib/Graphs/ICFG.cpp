@@ -46,17 +46,6 @@ FunEntryICFGNode::FunEntryICFGNode(NodeID id, const FunObjVar* f) : InterICFGNod
     }
 }
 
-FunExitICFGNode::FunExitICFGNode(NodeID id, const FunObjVar* f)
-    : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
-{
-    fun = f;
-    // if function is implemented
-    if (f->begin() != f->end())
-    {
-        bb = f->getExitBB();
-    }
-}
-
 const std::string ICFGNode::toString() const
 {
     std::string str;
@@ -235,6 +224,17 @@ ICFG::~ICFG()
         delete it;
     }
     icfgNodeToSVFLoopVec.clear();
+}
+
+void ICFG::addICFGNode(ICFGNode* node)
+{
+    addGNode(node->getId(),node);
+}
+
+void ICFG::addGlobalICFGNode(GlobalICFGNode* globalICFGNode)
+{
+    this->globalBlockNode = globalICFGNode;
+    addICFGNode(globalICFGNode);
 }
 
 
@@ -444,17 +444,7 @@ void ICFG::updateCallGraph(CallGraph* callgraph)
             {
                 FunEntryICFGNode* calleeEntryNode = getFunEntryBlock(callee);
                 FunExitICFGNode* calleeExitNode = getFunExitBlock(callee);
-                if(ICFGEdge* callEdge = addCallEdge(callBlockNode, calleeEntryNode))
-                {
-                    for (const SVFStmt *stmt : callBlockNode->getSVFStmts())
-                    {
-                        if(const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt))
-                        {
-                            if(callPE->getFunEntryICFGNode() == calleeEntryNode)
-                                SVFUtil::cast<CallCFGEdge>(callEdge)->addCallPE(callPE);
-                        }
-                    }
-                }
+                addCallEdge(callBlockNode, calleeEntryNode);
                 if(ICFGEdge* retEdge = addRetEdge(calleeExitNode, retBlockNode))
                 {
                     for (const SVFStmt *stmt : retBlockNode->getSVFStmts())

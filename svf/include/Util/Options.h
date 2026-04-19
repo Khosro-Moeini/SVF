@@ -240,6 +240,7 @@ public:
     static const Option<u32_t> LoopBound;
 
     // Abstract Execution
+    static const OptionMap<u32_t> AESparsity;
     static const Option<u32_t> WidenDelay;
     /// recursion handling mode, Default: TOP
     static const OptionMap<u32_t> HandleRecur;

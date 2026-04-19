@@ -631,13 +631,13 @@ const Option<bool> Options::PrintCGGraph(
 
 const Option<std::string> Options::WriteAnder(
     "write-ander",
-    "-write-ander=ir_annotator (Annotated IR with Andersen's results) or write Andersen's analysis results to a user-specified text file",
+    "Write Andersen's analysis results to a user-specified text file",
     ""
 );
 
 const Option<std::string> Options::ReadAnder(
     "read-ander",
-    "-read-ander=ir_annotator (Read Andersen's analysis results from the annotated IR, e.g., *.pre.bc) or from a text file",
+    "Read Andersen's analysis results from a text file",
     ""
 );
 
@@ -781,6 +781,24 @@ const Option<u32_t> Options::LoopBound(
    	std::numeric_limits<u32_t>::max()
 );
 
+const OptionMap<u32_t> Options::AESparsity(
+    "ae-sparsity",
+    "Abstract execution mode (Default: dense)",
+    AbstractInterpretation::AESparsity::Dense,
+{
+    {
+        AbstractInterpretation::AESparsity::Dense, "dense",
+        "Dense abstract execution: all variables propagated along ICFG edges."
+    },
+    {
+        AbstractInterpretation::AESparsity::SemiSparse, "semi-sparse",
+        "Semi-sparse abstract execution: ObjVars dense, ValVars sparse."
+    },
+    {
+        AbstractInterpretation::AESparsity::Sparse, "sparse",
+        "Sparse abstract execution via SVFG."
+    }
+});
 const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
 const OptionMap<u32_t> Options::HandleRecur(
