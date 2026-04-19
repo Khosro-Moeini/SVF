@@ -89,13 +89,22 @@ SVFIR* SVFIRBuilder::build()
     CallGraphBuilder callGraphBuilder;
     std::vector<const FunObjVar*> funset;
     Set<const FunObjVar*> ATSet;
+    std::ofstream outFile("taken.list");
     for (const auto& item: llvmModuleSet()->getFunctionSet())
     {
         funset.push_back(llvmModuleSet()->getFunObjVar(item));
         if (llvmModuleSet()->getFunObjVar(item)->hasAddressTaken())
+        {
+            //errs() << llvmModuleSet()->getFunObjVar(item)->getName() << "\n";
             ATSet.insert(llvmModuleSet()->getFunObjVar(item));
+            std::string name = llvmModuleSet()->getFunObjVar(item)->getName();
+            size_t pos = name.find('.');
+            if (outFile)
+                outFile << name.substr(0, pos) << "\n";
+            else
+                errs() << "Failed to open taken.list\n";
+        }
     }
-    errs() << ATSet.size() << "\n";
     pag->addressTakenSet = ATSet;
     pag->callGraph = callGraphBuilder.buildSVFIRCallGraph(funset);
 

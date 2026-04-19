@@ -41,7 +41,7 @@ const OptionMap<NodeIDAllocator::Strategy> Options::NodeAllocStrat(
 const Option<u32_t> Options::MaxFieldLimit(
     "field-limit",
     "Maximum number of fields for field sensitive analysis",
-   	std::numeric_limits<u32_t>::max() 
+   	std::numeric_limits<u32_t>::max()
 );
 
 const OptionMap<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
@@ -76,26 +76,26 @@ const Option<u32_t> Options::AnderTimeLimit(
 const Option<u32_t> Options::CxtBudget(
     "cxt-bg",
     "Maximum step budget of context-sensitive traversing",
-    10000
+   	std::numeric_limits<u32_t>::max()
 );
 
 // DDAPass.cpp
 const Option<u32_t> Options::MaxPathLen(
     "max-path",
     "Maximum path limit for DDA",
-    100000
+   	std::numeric_limits<u32_t>::max()
 );
 
 const Option<u32_t> Options::MaxContextLen(
     "max-cxt",
     "Maximum context limit for DDA",
-    3
+    std::numeric_limits<u32_t>::max()
 );
 
 const Option<u32_t> Options::MaxStepInWrapper(
     "max-step",
     "Maximum steps when traversing on SVFG to identify a memory allocation wrapper",
-    10
+    std::numeric_limits<u32_t>::max()
 );
 
 const Option<std::string> Options::UserInputQuery(
@@ -148,7 +148,7 @@ OptionMultiple<PointerAnalysis::PTATY> Options::DDASelected(
 const Option<u32_t> Options::FlowBudget(
     "flow-bg",
     "Maximum step budget of flow-sensitive traversing",
-    10000
+   	std::numeric_limits<u32_t>::max()
 );
 
 
@@ -290,7 +290,7 @@ const Option<bool> Options::PAGPrint(
 const Option<u64_t> Options::IndirectCallLimit(
     "ind-call-limit",
     "Indirect solved call edge limit",
-   	std::numeric_limits<u64_t>::max() 
+   	std::numeric_limits<u64_t>::max()
 );
 
 Option<bool> Options::UsePreCompFieldSensitive(
@@ -513,7 +513,7 @@ const Option<bool> Options::DumpSlice(
 const Option<u32_t> Options::CxtLimit(
     "cxt-limit",
     "Source-Sink Analysis Contexts Limit",
-    3
+   	std::numeric_limits<u32_t>::max()
 );
 
 
@@ -574,14 +574,14 @@ const Option<bool> Options::SymTabPrint(
 const Option<u32_t> Options::MaxZ3Size(
     "max-z3-size",
     "Maximum size limit for Z3 expression",
-    30
+   	std::numeric_limits<u32_t>::max()
 );
 
 // BoundedZ3Expr.cpp
 const Option<u32_t> Options::MaxBVLen(
     "max-bv-len",
     "Maximum length limit for Z3 bitvector",
-    64
+   	std::numeric_limits<u32_t>::max()
 );
 
 
@@ -778,7 +778,7 @@ const Option<bool> Options::LoopAnalysis(
 const Option<u32_t> Options::LoopBound(
     "loop-bound",
     "Maximum number of loop",
-    1
+   	std::numeric_limits<u32_t>::max()
 );
 
 const Option<u32_t> Options::WidenDelay(
@@ -835,19 +835,19 @@ const Option<u32_t> Options::AEPrecision(
 const Option<bool> Options::ArgTypePrune(
     "arg-type-prune",
     "prune based on argument type",
-    false 
+    false
 );
 
 const Option<bool> Options::AddrTakenFallback(
     "addr-taken-fallback",
     "fallback to resolving to all address taken function",
-    false 
+    false
 );
 
 const Option<bool> Options::NoVCall(
     "no-vcall",
     "do not look for vcall patterns",
-    false 
+    false
 );
 
 } // namespace SVF.

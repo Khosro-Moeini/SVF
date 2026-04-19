@@ -413,18 +413,27 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
             }
         }
     }
-	if (Options::AddrTakenFallback() == true)
+	if (getIndCallMap()[cs].size() == 0)
 	{
-		if (getIndCallMap()[cs].size() == 0)
+        std::ofstream outFile("unresolved.cg", std::ios_base::app);
+        if (outFile)
+        {
+            std::string name = cs->getCaller()->getName();
+            size_t pos = name.find('.');
+            outFile << name.substr(0, pos) << "~*\n";
+        }
+        else
+            errs() << "Failed to open unresolved.cg\n";
+        if (Options::AddrTakenFallback() == true)
 		{
 			for (const FunObjVar* callee: pag->getAddressTakenSet())
 			{
-				//const FunObjVar* callee = kv.first; 
+				//const FunObjVar* callee = kv.first;
 				if(callee->hasAddressTaken() == false)
 					continue;
 				if(SVFUtil::matchArgs(cs, callee) == false)
 					continue;
-				
+
 				if(0 == getIndCallMap()[cs].count(callee))
 				{
 					newEdges[cs].insert(callee);
@@ -435,6 +444,17 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
 					// The indirect call is maintained by ourself, We may update llvm's when we need to
 					//PTACallGraphNode* callgraphNode = callgraph->getOrInsertFunction(cs.getCaller());
 					//callgraphNode->addCalledFunction(cs,callgraph->getOrInsertFunction(callee));
+                    std::ofstream outFile("added.cg", std::ios_base::app);
+                    if (outFile)
+                    {
+                        std::string callerName = cs->getCaller()->getName();
+                        std::string calleeName = callee->getName();
+                        size_t callerPos = callerName.find('.');
+                        size_t calleePos = calleeName.find('.');
+                        outFile << callerName.substr(0, callerPos) << "~" << calleeName.substr(0, calleePos) << "\n";
+                    }
+                    else
+                        errs() << "Failed to open added.cg\n";
 				}
 			}
 		}
