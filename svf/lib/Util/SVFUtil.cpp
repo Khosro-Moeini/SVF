@@ -304,7 +304,8 @@ bool SVFUtil::matchType(const SVFType *lhs, const SVFType *rhs)
 {
     if (lhs->getKind() != rhs->getKind())
         return false;
-    if (lhs->isStructTy() == true){
+    if (lhs->isStructTy() == true)
+    {
         const SVFStructType *lhsStruct = dyn_cast<SVFStructType>(lhs);
         const SVFStructType *rhsStruct = dyn_cast<SVFStructType>(rhs);
         assert(rhsStruct && lhsStruct && "dynamic cast to struct failed");
@@ -327,6 +328,10 @@ bool SVFUtil::matchArgs(const CallICFGNode* call, const FunObjVar* callee)
         return false;
     if (Options::ArgTypePrune())
     {
+        const SVFType *callRetType = call->getType();
+        const SVFType *calleeRetType = callee->getReturnType();
+        if (matchType(callRetType, calleeRetType) == false)
+            return false;
         for (u32_t i = 0; i < call->arg_size(); i++)
         {
             const SVFType *callArgType = call->getArgument(i)->getType();
