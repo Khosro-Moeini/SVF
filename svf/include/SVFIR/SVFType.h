@@ -424,11 +424,6 @@ class SVFStructType : public SVFType
 
 protected:
 
-    const std::string& getName() const
-    {
-        return name;
-    }
-
     void addFieldsType(const SVFType* type)
     {
         fields.push_back(type);
@@ -453,6 +448,11 @@ public:
     void print(std::ostream& os) const override;
 
     const std::string& getName() const
+    {
+        return name;
+    }
+
+    const std::string& getName()
     {
         return name;
     }
