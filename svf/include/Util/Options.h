@@ -268,6 +268,8 @@ public:
 
     // float precision for symbolic abstraction
     static const Option<u32_t> AEPrecision;
+    // do not look for vcall patterns
+    static const Option<bool> NoVCall;
 };
 }  // namespace SVF
 
