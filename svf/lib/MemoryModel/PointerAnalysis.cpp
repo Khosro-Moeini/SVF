@@ -357,7 +357,7 @@ void PointerAnalysis::printIndCSTargets()
     for (; csIt != csEit; ++csIt)
     {
         const CallICFGNode* cs = csIt->first;
-        if (hasIndCSCallees(cs) == false)
+        if (hasIndCSCallees(cs) == false && cs->isInlineAsm() == false)
         {
             outs() << "\nNodeID: " << csIt->second;
             outs() << "\nCallSite: ";
@@ -377,6 +377,10 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
 {
 
     assert(pag->isIndirectCallSites(cs) && "not an indirect callsite?");
+
+    if (cs->isInlineAsm())
+        return;
+
     /// discover indirect pointer target
     for (PointsTo::iterator ii = target.begin(), ie = target.end();
             ii != ie; ii++)
