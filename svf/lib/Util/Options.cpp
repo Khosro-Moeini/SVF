@@ -863,4 +863,10 @@ const Option<u32_t> Options::MaxNodeLabelLength(
     250
 );
 
+const Option<bool> Options::NoVCall(
+    "no-vcall",
+    "Do not look for vcall patterns",
+    false
+);
+
 } // namespace SVF.

@@ -268,6 +268,9 @@ public:
 
     // GraphWriter.h
     static const Option<u32_t> MaxNodeLabelLength;
+
+    // do not look for vcall patterns
+    static const Option<bool> NoVCall;
 };
 }  // namespace SVF
 
