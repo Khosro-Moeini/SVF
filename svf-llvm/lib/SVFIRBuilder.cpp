@@ -62,6 +62,16 @@ SVFIR* SVFIRBuilder::build()
     if(pag->getNodeNumAfterPAGBuild() > 1)
         return pag;
 
+    // If callee is an alias, replace with aliasee.
+    // Could have a recursive implementation but have to watch for cycles.
+    for (Module& M : llvmModuleSet()->getLLVMModules())
+        for (Function& F : M)
+            for (BasicBlock& BB : F)
+                for (Instruction& I : BB)
+                    if (CallBase* cs = llvm::dyn_cast<CallBase>(&I))
+                        if (const GlobalAlias* alias = llvm::dyn_cast<GlobalAlias>(cs->getCalledOperand()))
+                            if (const Function* aliasee = llvm::dyn_cast<Function>(alias->getAliasee()->stripPointerCasts()))
+                                cs->setCalledOperand(const_cast<Function*>(aliasee));
 
     createFunObjVars();
 
