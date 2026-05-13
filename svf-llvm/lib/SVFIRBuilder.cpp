@@ -1261,6 +1261,12 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
     if(cs->isInlineAsm())
         return;
 
+    // If callee is an alias, replace with aliasee.
+    // Could have a recursive implementation but have to watch for cycles.
+    if (const GlobalAlias *alias = SVFUtil::dyn_cast<GlobalAlias>(cs->getCalledOperand()))
+        if (Function *callee = const_cast<Function*>(SVFUtil::dyn_cast<Function>(alias->getAliaseeObject())))
+            cs->setCalledFunction(callee);
+
     DBOUT(DPAGBuild,
           outs() << "process callsite " << svfcall->valueOnlyToString() << "\n");
 
