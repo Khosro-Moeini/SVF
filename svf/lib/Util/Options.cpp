@@ -875,4 +875,10 @@ const Option<bool> Options::ArgTypePrune(
     false
 );
 
+const Option<bool> Options::AddrTakenPrint(
+    "print-addr-taken",
+    "Dump address-taken functions",
+    false
+);
+
 } // namespace SVF.

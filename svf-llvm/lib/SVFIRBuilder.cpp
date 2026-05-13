@@ -85,6 +85,8 @@ SVFIR* SVFIRBuilder::build()
     for (const auto& item: llvmModuleSet()->getFunctionSet())
     {
         funset.push_back(llvmModuleSet()->getFunObjVar(item));
+        if (llvmModuleSet()->getFunObjVar(item)->hasAddressTaken())
+            pag->addressTakenSet.insert(llvmModuleSet()->getFunObjVar(item));
     }
     pag->callGraph = callGraphBuilder.buildSVFIRCallGraph(funset);
 

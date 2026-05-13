@@ -243,6 +243,7 @@ protected:
 public:
     /// Dump the statistics
     void dumpStat();
+    void dumpAddressTakenSet(const std::string& filename);
 
     /// Determine whether a points-to contains a black hole or constant node
     //@{
