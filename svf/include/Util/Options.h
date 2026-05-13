@@ -275,6 +275,8 @@ public:
     static const Option<bool> ArgTypePrune;
     // print address taken functions
     static const Option<bool> AddrTakenPrint;
+    // address taken fallback
+    static const Option<bool> AddrTakenFallback;
 };
 }  // namespace SVF
 

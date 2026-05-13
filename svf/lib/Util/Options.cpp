@@ -881,4 +881,10 @@ const Option<bool> Options::AddrTakenPrint(
     false
 );
 
+const Option<bool> Options::AddrTakenFallback(
+    "addr-taken-fallback",
+    "Resolve no-target call sites to matching address-taken functions",
+    false
+);
+
 } // namespace SVF.
