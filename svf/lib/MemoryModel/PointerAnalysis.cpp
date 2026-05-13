@@ -169,6 +169,38 @@ void PointerAnalysis::dumpStat()
     }
 }
 
+void PointerAnalysis::dumpAddressTakenSet(const std::string& filename)
+{
+    std::ofstream outFile(filename.c_str());
+    if (!outFile.is_open())
+    {
+        SVFUtil::errs() << "Error: could not open file " << filename << "\n";
+        return;
+    }
+
+    for (const FunObjVar* F : pag->getAddressTakenSet())
+    {
+        outFile << F->getReturnType()->toString() << " ";
+
+        outFile << F->getName() << "(";
+
+        const SVFFunctionType* FT = F->getFunctionType();
+        for (unsigned i = 0; i < F->arg_size(); i++)
+        {
+            if (i > 0)
+                outFile << ", ";
+            outFile << FT->getParamTypes()[i]->toString();
+        }
+
+        if (FT->isVarArg())
+            outFile << ", ...";
+
+        outFile << ");\n";
+    }
+
+    outFile.close();
+}
+
 /*!
  * Finalize the analysis after solving
  * Given the alias results, verify whether it is correct or not using alias check functions
@@ -195,6 +227,9 @@ void PointerAnalysis::finalize()
 
     if (Options::FuncPointerPrint())
         printIndCSTargets();
+
+    if (Options::AddrTakenPrint())
+        dumpAddressTakenSet("address_taken_set.txt");
 
     getCallGraph()->verifyCallGraph();
 

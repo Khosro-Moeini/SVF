@@ -272,6 +272,8 @@ public:
     static const Option<bool> NoVCall;
     // argument type pruning
     static const Option<bool> ArgTypePrune;
+    // print address taken functions
+    static const Option<bool> AddrTakenPrint;
 };
 }  // namespace SVF
 
