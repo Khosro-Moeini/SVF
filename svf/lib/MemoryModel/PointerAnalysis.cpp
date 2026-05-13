@@ -207,6 +207,23 @@ void PointerAnalysis::dumpAddressTakenSet(const std::string& filename)
  */
 void PointerAnalysis::finalize()
 {
+    if (Options::AddrTakenFallback())
+    {
+        for (const auto& [cs, funPtrId] : pag->getIndirectCallsites())
+        {
+            CallGraph* cg = getCallGraph();
+            if (cg->hasIndCSCallees(cs))
+                continue;
+
+            for (const FunObjVar* callee: pag->getAddressTakenSet())
+            {
+                if (!SVFUtil::matchArgs(cs, callee))
+                    continue;
+                getIndCallMap()[cs].insert(callee);
+                cg->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
+            }
+        }
+    }
 
     /// Print statistics
     dumpStat();
