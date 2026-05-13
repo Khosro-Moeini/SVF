@@ -33,6 +33,7 @@
 #include <time.h>
 
 #include "MemoryModel/PointsTo.h"
+#include "SVFIR/SVFType.h"
 #include "Util/Casting.h"
 #include "Util/ExtAPI.h"
 #include "Util/GeneralType.h"
@@ -185,6 +186,8 @@ inline bool isNonInstricCallSite(const ICFGNode* inst)
         return false;
     return isCallSite(inst);
 }
+
+bool matchType(const SVFType *lhs, const SVFType *rhs);
 
 /// Match arguments for callsite at caller and callee
 /// if the arg size does not match then we do not need to connect this parameter

@@ -869,4 +869,10 @@ const Option<bool> Options::NoVCall(
     false
 );
 
+const Option<bool> Options::ArgTypePrune(
+    "arg-type-prune",
+    "Prune call graph based on argument types",
+    false
+);
+
 } // namespace SVF.
