@@ -270,6 +270,8 @@ public:
     static const Option<u32_t> AEPrecision;
     // do not look for vcall patterns
     static const Option<bool> NoVCall;
+    // argument type pruning
+    static const Option<bool> ArgTypePrune;
 };
 }  // namespace SVF
 
