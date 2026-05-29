@@ -1002,6 +1002,10 @@ protected:
     {
         return allArgs;
     }
+    inline void setExternalLinkage(bool iel)
+    {
+        isExtrnLink = iel;
+    }
 
 public:
     typedef SVFLoopAndDomInfo::BBSet BBSet;
@@ -1018,6 +1022,7 @@ private:
     bool isUncalled;    /// return true if this function is never called
     bool isNotRet;   /// return true if this function never returns
     bool supVarArg;    /// return true if this function supports variable arguments
+    bool isExtrnLink;    /// return true if this function is externally linkable
     const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVF Function
     SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
     const FunObjVar * realDefFun;  /// the definition of a function across multiple modules
@@ -1065,8 +1070,8 @@ public:
         delete bbGraph;
     }
 
-    void initFunObjVar(bool decl, bool intrinc, bool addr, bool uncalled, bool notret, bool vararg, const SVFFunctionType *ft,
-                       SVFLoopAndDomInfo *ld, const FunObjVar *real, BasicBlockGraph *bbg,
+    void initFunObjVar(bool decl, bool intrinc, bool addr, bool uncalled, bool notret, bool vararg, bool iel,
+                       const SVFFunctionType *ft, SVFLoopAndDomInfo *ld, const FunObjVar *real, BasicBlockGraph *bbg,
                        const std::vector<const ArgValVar *> &allarg, const SVFBasicBlock *exit);
 
     void setRelDefFun(const FunObjVar *real)
@@ -1108,6 +1113,11 @@ public:
     inline bool hasReturn() const
     {
         return  !isNotRet;
+    }
+
+    inline bool isExternalLinkage() const
+    {
+        return isExtrnLink;
     }
 
     /// Returns the FunctionType

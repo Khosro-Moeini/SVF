@@ -436,6 +436,26 @@ inline const Function* getProgEntryFunction(Module& module)
     return nullptr;
 }
 
+inline bool isLinkageExternal(llvm::GlobalValue::LinkageTypes linkage)
+{
+    switch (linkage)
+    {
+        case llvm::GlobalValue::ExternalLinkage:
+        case llvm::GlobalValue::LinkOnceAnyLinkage:
+        case llvm::GlobalValue::LinkOnceODRLinkage:
+        case llvm::GlobalValue::WeakAnyLinkage:
+        case llvm::GlobalValue::WeakODRLinkage:
+        case llvm::GlobalValue::ExternalWeakLinkage:
+        case llvm::GlobalValue::CommonLinkage:
+            return true;
+        default:
+            // AvailableExternallyLinkage
+            // InternalLinkage
+            // PrivateLinkage
+            return false;
+    }
+}
+
 } // End namespace LLVMUtil
 
 } // End namespace SVF

@@ -199,6 +199,13 @@ void SVFIRBuilder::initFunObjVar()
 {
     for (Module& mod : llvmModuleSet()->getLLVMModules())
     {
+        for (const GlobalAlias& GA : mod.aliases())
+            if (LLVMUtil::isLinkageExternal(GA.getLinkage()))
+                if (const Function* targetFunc = SVFUtil::dyn_cast<Function>(GA.getAliasee()->stripPointerCasts()))
+                {
+                    FunObjVar* svffun = const_cast<FunObjVar*>(llvmModuleSet()->getFunObjVar(targetFunc));
+                    svffun->setExternalLinkage(true);
+                }
         /// Function
         for (const Function& f : mod.functions())
         {
@@ -357,6 +364,7 @@ void SVFIRBuilder::createFunObjVars()
 
         funObjVar->initFunObjVar(fun->isDeclaration(), LLVMUtil::isIntrinsicFun(fun), fun->hasAddressTaken(),
                                  LLVMUtil::isUncalledFunction(fun), LLVMUtil::functionDoesNotRet(fun), fun->isVarArg(),
+                                 LLVMUtil::isLinkageExternal(fun->getLinkage()),
                                  SVFUtil::cast<SVFFunctionType>(llvmModuleSet()->getSVFType(fun->getFunctionType())),
                                  new SVFLoopAndDomInfo, nullptr, nullptr,
                                  {}, nullptr);

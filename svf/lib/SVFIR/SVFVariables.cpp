@@ -484,7 +484,7 @@ FunObjVar::FunObjVar(NodeID i, ObjTypeInfo* ti, const ICFGNode* node)
 {
 }
 
-void FunObjVar::initFunObjVar(bool decl, bool intrinc, bool addr, bool uncalled, bool notret, bool vararg,
+void FunObjVar::initFunObjVar(bool decl, bool intrinc, bool addr, bool uncalled, bool notret, bool vararg, bool iel,
                               const SVFFunctionType *ft, SVFLoopAndDomInfo *ld, const FunObjVar *real, BasicBlockGraph *bbg,
                               const std::vector<const ArgValVar *> &allarg, const SVFBasicBlock *exit)
 {
@@ -494,6 +494,7 @@ void FunObjVar::initFunObjVar(bool decl, bool intrinc, bool addr, bool uncalled,
     isUncalled = uncalled;
     isNotRet = notret;
     supVarArg = vararg;
+    isExtrnLink = iel;
     funcType = ft;
     loopAndDom = ld;
     realDefFun = real;
