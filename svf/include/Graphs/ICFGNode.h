@@ -417,6 +417,7 @@ protected:
     const FunObjVar* calledFunc;  /// called function
     bool isvararg;                  /// is variable argument
     bool isVirCallInst;             /// is virtual call inst
+    bool isInAsm;                   /// is inline asm
     SVFVar* vtabPtr;                /// virtual table pointer
     s32_t virtualFunIdx;            /// virtual function index of the virtual table(s) at a virtual call
     std::string funNameOfVcall;     /// the function name of this virtual call
@@ -425,10 +426,10 @@ protected:
 
 public:
     CallICFGNode(NodeID id, const SVFBasicBlock* b, const SVFType* ty,
-                 const FunObjVar* cf, bool iv, bool ivc, s32_t vfi,
+                 const FunObjVar* cf, bool iv, bool ivc, bool iia, s32_t vfi,
                  const std::string& fnv)
         : InterICFGNode(id, FunCallBlock), ret(nullptr), calledFunc(cf),
-          isvararg(iv), isVirCallInst(ivc), vtabPtr(nullptr),
+          isvararg(iv), isVirCallInst(ivc), isInAsm(iia), vtabPtr(nullptr),
           virtualFunIdx(vfi), funNameOfVcall(fnv)
     {
         fun = b->getFunction();
@@ -510,6 +511,11 @@ public:
     inline bool isVirtualCall() const
     {
         return isVirCallInst;
+    }
+
+    inline bool isInlineAsm() const
+    {
+        return isInAsm;
     }
 
     inline void setVtablePtr(SVFVar* v)

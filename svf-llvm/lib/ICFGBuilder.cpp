@@ -259,6 +259,7 @@ InterICFGNode* ICFGBuilder::addInterBlockICFGNode(const Instruction* inst)
     CallICFGNode* callICFGNode = icfg->addCallICFGNode(
                                      bb, llvmModuleSet()->getSVFType(inst->getType()),
                                      calledFunc, cb->getFunctionType()->isVarArg(), isvcall,
+                                     cb->isInlineAsm(),
                                      isvcall ? cppUtil::getVCallIdx(cb) : 0,
                                      isvcall ? cppUtil::getFunNameOfVCallSite(cb) : "");
     llvmModuleSet()->addInstructionMap(inst, callICFGNode);
