@@ -338,8 +338,11 @@ if [[ "$sysOS" == "Darwin" ]]; then
     )
 fi
 
-rm -rf "${BUILD_DIR}"
-mkdir "${BUILD_DIR}"
+if echo "$@" | grep -iqw "clean"; then
+    rm -rf "${BUILD_DIR}"
+    exit 0
+fi
+mkdir -p "${BUILD_DIR}"
 # If you need shared libs, turn BUILD_SHARED_LIBS on
 cmake -D CMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}"   \
     -DSVF_ENABLE_ASSERTIONS:BOOL=true              \
