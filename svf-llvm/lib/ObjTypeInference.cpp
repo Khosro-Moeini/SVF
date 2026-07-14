@@ -620,6 +620,7 @@ Set<const Value *> &ObjTypeInference::bwfindAllocOfVar(const Value *var)
         }
         else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
         {
+            if (!hasUseList(loadInst->getPointerOperand())) continue;
             for (const auto use: loadInst->getPointerOperand()->users())
             {
                 if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use))
